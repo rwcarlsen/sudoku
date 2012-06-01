@@ -27,11 +27,11 @@ func main() {
 				count++
 		}
 	}
-	fmt.Println("done!")
 
   for _, a := range master {
-    fmt.Println(a)
+    fmt.Print(a.val, ",")
   }
+  fmt.Print("\n")
 }
 
 type tunnel chan msg
@@ -40,7 +40,7 @@ type group []*agent
 func (g group) JustOneWith(val int) bool {
   count := 0
   for _, a := range g {
-    if a.val == val {
+    if a.ops[val] {
       count++
     }
   }
@@ -81,16 +81,6 @@ type agent struct {
 	ops options
 }
 
-func (a *agent) String() string {
-	s := "id=" + strconv.Itoa(a.id) + ", val=" + strconv.Itoa(a.val)
-	s += "\n"
-	for _, g := range a.grps {
-		s += g.String() + "\n"
-	}
-	s += a.ops.String()
-	return s
-}
-
 func New(id int, done tunnel) *agent {
 	ops := make(options)
 	for j := 1; j <= numVals; j++ {
@@ -105,9 +95,19 @@ func New(id int, done tunnel) *agent {
 		}
 }
 
+func (a *agent) String() string {
+	s := "agent:: id=" + strconv.Itoa(a.id) + ", val=" + strconv.Itoa(a.val)
+	s += "\n"
+	for _, g := range a.grps {
+		s += g.String() + "\n"
+	}
+	s += a.ops.String()
+	return s
+}
+
 func (a *agent) SetVal(val int) {
-	for val, _ := range a.ops {
-		a.ops[val] = false
+	for v, _ := range a.ops {
+		a.ops[v] = false
 	}
 	a.ops[val] = true
 	a.val = val
@@ -123,22 +123,24 @@ func (a *agent) markTaken(m msg) {
 }
 
 func (a *agent) checkSolved() {
-	left := 0
+	opCount := 0
 	finalVal := 0
 	for val, op := range a.ops {
-    if !op {
-      continue
+    if op {
+      opCount++
+      finalVal = val
     }
-    left++
-    finalVal = val
 	}
-	if left == 1 {
+	if opCount == 1 {
     a.SetVal(finalVal)
     a.notifyAll()
     return
 	}
 
-	for val, _ := range a.ops {
+	for val, op := range a.ops {
+    if !op {
+      continue
+    }
     for _, g := range a.grps {
       if g.JustOneWith(val) {
         a.SetVal(val)
@@ -168,7 +170,6 @@ func (a *agent) run() {
 	for a.val == 0 {
 		select {
 			case m = <-a.ch:
-        fmt.Println(" received message")
 				a.markTaken(m)
 		}
 	}
