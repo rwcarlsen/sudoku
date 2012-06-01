@@ -10,7 +10,10 @@ const (
 
 func main() {
   p := sudoku.New(numAgents, numVals)
-  p.Solve(setPuzzle, makeGroups)
+  err := p.Solve(setPuzzle, makeGroups)
+  if err != nil {
+    fmt.Println(err)
+  }
   fmt.Println(p)
 }
 
@@ -36,6 +39,6 @@ func makeGroups(master sudoku.Group) (grps []sudoku.Group) {
 func setPuzzle(g sudoku.Group) {
 	g[0].SetVal(1)
 	g[3].SetVal(3)
-	g[7].SetVal(1)
+	g[7].SetVal(0)
 }
 

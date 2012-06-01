@@ -3,6 +3,7 @@ package sudoku
 
 import "fmt"
 import "time"
+import "errors"
 
 func DefaultPuzzle() *Problem {
   return New(1, 1)
@@ -25,7 +26,7 @@ func New(numSquares , numVals int) *Problem {
   }
 }
 
-func (p *Problem) Solve(initVals func(Group), makeGroups func(Group) []Group) {
+func (p *Problem) Solve(initVals func(Group), makeGroups func(Group) []Group) error {
   initVals(p.masterList)
   p.grps = makeGroups(p.masterList)
 
@@ -44,9 +45,10 @@ func (p *Problem) Solve(initVals func(Group), makeGroups func(Group) []Group) {
 			case <-ch:
 				count++
       case <-time.After(10 * time.Second):
-        count = len(p.masterList)
+        return errors.New("sudoku: failed to solve puzzle.")
 		}
 	}
+  return nil
 }
 func (p *Problem) String() string {
   s := ""
