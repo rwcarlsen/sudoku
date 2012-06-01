@@ -16,9 +16,9 @@ func main() {
 		master[i] = New(i, ch)
 	}
 	
-	setPuzzle(master)
 	grps := makeGroups(master)
 	assignGroups(grps)
+	setPuzzle(master)
 	dispatch(master)
 	
 	for count := 0; count < numAgents; {
@@ -137,15 +137,16 @@ func (a *agent) notifyAll() {
 }
 
 func (a *agent) run() {
-	fmt.Println(a)
-	if a.val != 0 {
-		a.notifyAll()
-	}
+  if a.val != 0 {
+    a.notifyAll()
+  }
 
 	var m msg
 	for a.val == 0 {
 		select {
 			case m = <-a.ch:
+        fmt.Println(a)
+        fmt.Println("received message")
 				a.markTaken(m)
 			default:
 				a.checkIfUnique()
