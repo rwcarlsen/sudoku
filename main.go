@@ -3,33 +3,28 @@ package main
 import "fmt"
 import "./sudoku"
 
-func main() {
-	master := make(sudoku.Group, sudoku.NumAgents)
-	for i := 0; i < sudoku.NumAgents; i++ {
-		master[i] = sudoku.New(i)
-	}
-	
-	grps := makeGroups(master)
-	setPuzzle(master)
-  sudoku.Solve(master, grps)
+const (
+  numAgents = 9
+  numVals = 3
+)
 
-  for _, a := range master {
-    fmt.Print(a.Val, ",")
-  }
-  fmt.Print("\n")
+func main() {
+  p := sudoku.New(numAgents, numVals)
+  p.Solve(setPuzzle, makeGroups)
+  fmt.Println(p)
 }
 
 // user defined
 func makeGroups(master sudoku.Group) (grps []sudoku.Group) {
-  grps = make([]sudoku.Group, 2 * sudoku.NumVals)
+  grps = make([]sudoku.Group, 2 * numVals)
   for i, _ := range grps {
-    grps[i] = make(sudoku.Group, sudoku.NumVals)
+    grps[i] = make(sudoku.Group, numVals)
   }
-  for i := 0; i < sudoku.NumVals; i++ {
-    for j := 0; j < sudoku.NumVals; j++ {
-      n := i * sudoku.NumVals + j
-      col := n % sudoku.NumVals
-      row := n / sudoku.NumVals
+  for i := 0; i < numVals; i++ {
+    for j := 0; j < numVals; j++ {
+      n := i * numVals + j
+      col := n % numVals
+      row := n / numVals
       grps[col][row] = master[n]
       grps[row + 3][col] = master[n]
     }

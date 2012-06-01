@@ -1,33 +1,59 @@
 
 package sudoku
 
+import "fmt"
 import "time"
 
-const (
-  NumAgents = 9
-	NumVals = 3
-)
+func DefaultPuzzle() *Problem {
+  return New(1, 1)
+}
 
-func Solve(masterList Group, grps []Group) {
+type Problem struct {
+  masterList Group
+  grps []Group
+  numVals int
+}
+
+func New(numSquares , numVals int) *Problem {
+  masterList := make(Group, numSquares)
+  for i, _ := range masterList {
+    masterList[i] = newSquare(i, numSquares, numVals)
+  }
+  return &Problem{
+    masterList: masterList,
+    numVals: numVals,
+  }
+}
+
+func (p *Problem) Solve(initVals func(Group), makeGroups func(Group) []Group) {
+  initVals(p.masterList)
+  p.grps = makeGroups(p.masterList)
+
 	ch := make(tunnel)
-
-  for _, g := range grps {
+  for _, g := range p.grps {
     for _, a := range g {
       a.done = ch
     }
   }
 	
-	assignGroups(grps)
-	dispatch(masterList)
+	p.assignGroups()
+	p.dispatch()
 
-	for count := 0; count < NumAgents; {
+	for count := 0; count < len(p.masterList); {
 		select {
 			case <-ch:
 				count++
       case <-time.After(10 * time.Second):
-        count = NumAgents
+        count = len(p.masterList)
 		}
 	}
+}
+func (p *Problem) String() string {
+  s := ""
+  for _, a := range p.masterList {
+    s += fmt.Sprint(a.Val, ",")
+  }
+  return s
 }
 
 type msg struct {
@@ -59,16 +85,16 @@ type agent struct {
 	ops options
 }
 
-func New(id int) *agent {
+func newSquare(id, numAgents, numVals int) *agent {
 	ops := make(options)
-	for j := 1; j <= NumVals; j++ {
+	for j := 1; j <= numVals; j++ {
 		ops[j] = true
 	}
 	return &agent{
 			id: id,
 			grps: []Group{},
 			ops: ops,
-			ch: make(tunnel, NumAgents),
+			ch: make(tunnel, numAgents),
 		}
 }
 
@@ -77,6 +103,10 @@ func (a *agent) AddGroup(g Group) {
 }
 
 func (a *agent) SetVal(val int) {
+  if val == 0 {
+    return
+  }
+
 	for v, _ := range a.ops {
 		a.ops[v] = false
 	}
@@ -135,16 +165,16 @@ func (a *agent) notifyAll() {
 	}
 }
 
-func assignGroups(grps []Group) {
-	for _, g := range grps {
+func (p *Problem) assignGroups() {
+	for _, g := range p.grps {
 		for _, a := range g {
 			a.AddGroup(g)
 		}
 	}
 }
 
-func dispatch(g Group) {
-	for _, a := range g {
+func (p *Problem) dispatch() {
+	for _, a := range p.masterList {
 		go a.Run()
 	}
 }
