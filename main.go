@@ -20,7 +20,7 @@ func main() {
 	assignGroups(grps)
 	setPuzzle(master)
 	dispatch(master)
-	
+
 	for count := 0; count < numAgents; {
 		select {
 			case <-ch:
@@ -37,8 +37,14 @@ func main() {
 type tunnel chan msg
 
 type group []*agent
-func (g *group) Add(a *agent) {
-  g = append(g, a)
+func (g group) JustOneWith(val int) bool {
+  count := 0
+  for _, a := range g {
+    if a.val == val {
+      count++
+    }
+  }
+  return count == 1
 }
 func (g *group) String() string {
 	s := "group["
@@ -120,17 +126,27 @@ func (a *agent) checkSolved() {
 	left := 0
 	finalVal := 0
 	for val, op := range a.ops {
-		if op {
-			left++
-			finalVal = val
-		}	
+    if !op {
+      continue
+    }
+    left++
+    finalVal = val
 	}
-	if left != 1 {
-		return
+	if left == 1 {
+    a.SetVal(finalVal)
+    a.notifyAll()
+    return
 	}
-	
-	a.val = finalVal
-	a.notifyAll()
+
+	for val, _ := range a.ops {
+    for _, g := range a.grps {
+      if g.JustOneWith(val) {
+        a.SetVal(val)
+        a.notifyAll()
+        return
+      }
+    }
+  }
 }
 
 func (a *agent) notifyAll() {
@@ -152,17 +168,10 @@ func (a *agent) run() {
 	for a.val == 0 {
 		select {
 			case m = <-a.ch:
-        fmt.Println(a)
-        fmt.Println("received message")
+        fmt.Println(" received message")
 				a.markTaken(m)
-			default:
-				a.checkIfUnique()
 		}
 	}
-}
-
-func (a *agent) checkIfUnique() {
-
 }
 
 // user defined
@@ -175,23 +184,25 @@ func makeGroups(master group) (grps []group) {
     for j := 0; j < numVals; j++ {
       n := i * numVals + j
       col := n % numVals
-      row = n / numVals
-      grps[i].
+      row := n / numVals
+      grps[col][row] = master[n]
+      grps[row + 3][col] = master[n]
     }
   }
-	return []group{master}
+	return grps
 }
 
 // user defined
 func setPuzzle(g group) {
 	g[0].SetVal(1)
-	g[1].SetVal(2)
+	g[4].SetVal(2)
+	g[8].SetVal(3)
 }
 
 func assignGroups(grps []group) {
 	for _, g := range grps {
-		for _, ag := range g {
-			ag.AddGroup(g)
+		for _, a := range g {
+			a.AddGroup(g)
 		}
 	}
 }
