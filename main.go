@@ -4,7 +4,7 @@ import "fmt"
 import "strconv"
 
 const (
-  numAgents = 3
+  numAgents = 9
 	numVals = 3
 )
 
@@ -28,11 +28,18 @@ func main() {
 		}
 	}
 	fmt.Println("done!")
+
+  for _, a := range master {
+    fmt.Println(a)
+  }
 }
 
 type tunnel chan msg
 
 type group []*agent
+func (g *group) Add(a *agent) {
+  g = append(g, a)
+}
 func (g *group) String() string {
 	s := "group["
 	for _, a := range *g {
@@ -160,6 +167,18 @@ func (a *agent) checkIfUnique() {
 
 // user defined
 func makeGroups(master group) (grps []group) {
+  grps = make([]group, 2 * numVals)
+  for i, _ := range grps {
+    grps[i] = make(group, numVals)
+  }
+  for i := 0; i < numVals; i++ {
+    for j := 0; j < numVals; j++ {
+      n := i * numVals + j
+      col := n % numVals
+      row = n / numVals
+      grps[i].
+    }
+  }
 	return []group{master}
 }
 
