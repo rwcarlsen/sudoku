@@ -93,6 +93,12 @@ func NewGrid(n int) *Grid {
 	return &Grid{Groups: groups, Cells: cells}
 }
 
+func (g *Grid) Step() {
+	for _, group := range g.Groups {
+
+	}
+}
+
 func main() {
 	n := 2
 	grid := NewGrid(n)
